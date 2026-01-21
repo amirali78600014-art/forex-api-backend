@@ -22,30 +22,39 @@ function startStreaming() {
   client = new TradingView.Client();
   let connectedPairs = 0;
 
+  // Error handler for client
+  client.onError = (err) => {
+    console.log('Client error:', err.message);
+  };
+
   pairs.forEach((pair) => {
     try {
       const chart = new client.Session.Chart();
       chart.setMarket(pair, { timeframe: '1' });
 
       chart.onUpdate(() => {
-        if (chart.periods && chart.periods[0]) {
-          const pairName = pair.replace(/^(FX_IDC:|BINANCE:|NASDAQ:|NYSE:|TVC:|COMEX:|COINBASE:|KRAKEN:)/, '');
-          const period = chart.periods[0];
-          
-          const data = {
-            pair: pairName,
-            price: period.close || 0,
-            open: period.open || 0,
-            high: period.high || 0,
-            low: period.low || 0,
-            time: new Date().toISOString()
-          };
-          
-          if (data.price && data.open && data.high && data.low) {
-            db.ref(`prices/${pairName}`).set(data).catch(err => 
-              console.log(`Firebase error for ${pairName}:`, err.message)
-            );
+        try {
+          if (chart.periods && chart.periods[0]) {
+            const pairName = pair.replace(/^(FX_IDC:|BINANCE:|NASDAQ:|NYSE:|TVC:|COMEX:|COINBASE:|KRAKEN:)/, '');
+            const period = chart.periods[0];
+            
+            const data = {
+              pair: pairName,
+              price: period.close || 0,
+              open: period.open || 0,
+              high: period.high || 0,
+              low: period.low || 0,
+              time: new Date().toISOString()
+            };
+            
+            if (data.price && data.open && data.high && data.low) {
+              db.ref(`prices/${pairName}`).set(data).catch(err => 
+                console.log(`Firebase error for ${pairName}:`, err.message)
+              );
+            }
           }
+        } catch (err) {
+          console.log(`Update error for ${pair}:`, err.message);
         }
       });
 
@@ -64,6 +73,22 @@ function startStreaming() {
 
   console.log(`Successfully connected to ${connectedPairs} pairs`);
 }
+
+// Restart on crash
+process.on('uncaughtException', (err) => {
+  console.log('Uncaught exception:', err.message);
+  console.log('Restarting in 5 seconds...');
+  setTimeout(() => {
+    if (client) {
+      Object.values(charts).forEach(chart => {
+        try { chart.delete(); } catch(e) {}
+      });
+      try { client.end(); } catch(e) {}
+    }
+    charts = {};
+    startStreaming();
+  }, 5000);
+});
 
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
