@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Real-time Data</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <h1>Firebase Real-time Forex Data</h1>
+    <div id="prices"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMVGiV0_jgRpXxS_fkWzze3DJ0lYKIiek",
+            authDomain: "tradingviewapi-d95ac.firebaseapp.com",
+            databaseURL: "https://tradingviewapi-d95ac-default-rtdb.firebaseio.com",
+            projectId: "tradingviewapi-d95ac",
+            storageBucket: "tradingviewapi-d95ac.firebasestorage.app",
+            messagingSenderId: "856092009094",
+            appId: "1:856092009094:web:8627aa2536902ca9b02707"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Real-time data listen karo
+        database.ref('prices').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const pricesDiv = document.getElementById('prices');
+            pricesDiv.innerHTML = '<h2>Live Prices:</h2>';
+            
+            for (let pair in data) {
+                const price = data[pair];
+                pricesDiv.innerHTML += `
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 5px;">
+                        <strong>${price.pair}</strong>: ${price.price}<br>
+                        Open: ${price.open} | High: ${price.high} | Low: ${price.low}<br>
+                        Time: ${price.time}
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
