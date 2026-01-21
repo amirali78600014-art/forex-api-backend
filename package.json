@@ -4,7 +4,7 @@
   "description": "Real-time forex data server",
   "main": "forex-test-server.js",
   "scripts": {
-    "start": "node forex-test-server.js",
+    "start": "node server.js",
     "dev": "node forex-test-server.js",
     "deploy:frontend": "firebase deploy --only hosting"
   },
